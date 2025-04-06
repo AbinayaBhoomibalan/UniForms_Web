@@ -64,31 +64,41 @@ function FormList() {
       alert('Please enter a form title');
       return;
     }
-
+  
+    if (!user) {
+      alert('User not logged in!');
+      return;
+    }
+  
     try {
-      // Step 1: Create form inside user's collection
-      const docRef = await addDoc(collection(db, 'users', user!.uid, 'forms'), {
+      console.log('Creating form for UID:', user.uid);
+  
+      // Step 1: Add form to user's forms subcollection
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'forms'), {
         title: newFormTitle,
         description: newFormDescription || 'No description',
         createdAt: serverTimestamp(),
         questions: [],
       });
-
-      // Step 2: Create a formDirectory mapping entry
+  
+      console.log('Form created with ID:', docRef.id);
+  
+      // Step 2: Add to formDirectory
       await setDoc(doc(db, 'formDirectory', docRef.id), {
-        userId: user!.uid,
+        userId: user.uid,
         createdAt: serverTimestamp(),
       });
-
+  
+      // Reset form UI
       setNewFormTitle('');
       setNewFormDescription('');
       setShowNewForm(false);
-
-      navigate(`/form/${docRef.id}`); // Navigate to the new form page
-    } catch (error) {
-      console.error('Create error:', error);
-      alert(`Failed to create form. ${error instanceof Error ? error.message : String(error)}`);
-
+  
+      // Navigate to new form
+      navigate(`/form/${docRef.id}`);
+    } catch (error: any) {
+      alert('Failed to create form.');
+      console.error('Create error:', error.message, error);
     }
   };
 
