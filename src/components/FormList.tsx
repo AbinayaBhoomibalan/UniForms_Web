@@ -86,8 +86,9 @@ function FormList() {
 
       navigate(`/form/${docRef.id}`); // Navigate to the new form page
     } catch (error) {
-      alert('Failed to create form.');
       console.error('Create error:', error);
+      alert(`Failed to create form. ${error instanceof Error ? error.message : String(error)}`);
+
     }
   };
 
