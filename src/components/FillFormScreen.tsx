@@ -1,7 +1,7 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '../firebaseConfig'; // Adjust the import path as needed
+import { db } from '../firebaseConfig'; // No need for auth import since it's public
 
 interface Question {
   id: string;
@@ -39,14 +39,8 @@ const FillFormScreen: React.FC = () => {
           return;
         }
 
-        const user = auth.currentUser;
-        if (!user) {
-          setError('User not authenticated.');
-          setLoading(false);
-          return;
-        }
-
-        const formRef = doc(db, 'users', user.uid, 'forms', formId);
+        // Fetching form from 'forms' collection (shared/public access)
+        const formRef = doc(db, 'forms', formId);
         const formSnap = await getDoc(formRef);
 
         if (formSnap.exists()) {
@@ -88,12 +82,6 @@ const FillFormScreen: React.FC = () => {
         return;
       }
 
-      const user = auth.currentUser;
-      if (!user) {
-        setError("User not authenticated");
-        return;
-      }
-
       const responseData = {
         formId,
         responses: Object.entries(responses).map(([questionId, answer]) => ({
@@ -103,7 +91,8 @@ const FillFormScreen: React.FC = () => {
         submittedAt: serverTimestamp(),
       };
 
-      const responsesCollectionRef = collection(db, 'users', user.uid, 'forms', formId, 'responses');
+      // Storing in public responses collection
+      const responsesCollectionRef = collection(db, 'forms', formId, 'responses');
       await addDoc(responsesCollectionRef, responseData);
 
       setSubmitted(true);
