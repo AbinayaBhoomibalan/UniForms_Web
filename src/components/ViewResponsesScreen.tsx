@@ -28,16 +28,20 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
         const responsesRef = collection(db, "users", userId, "forms", formId, "responses");
         const snapshot = await getDocs(responsesRef);
         const fetched: ResponseData[] = [];
-
+  
         snapshot.forEach(doc => {
           const data = doc.data();
-          fetched.push({
+          // Transform the responses array into the expected format
+          const responseObj: ResponseData = {
             id: doc.id,
-            answers: data.responses || [], // 👈 match your Firestore array field
-            timestamp: data.timestamp?.toDate() || new Date(),
-          });
+            // Make sure we're correctly accessing the responses array from Firestore
+            answers: Array.isArray(data.responses) ? data.responses : [],
+            // Use submittedAt instead of timestamp if that's what you're storing
+            timestamp: data.submittedAt?.toDate() || new Date(),
+          };
+          fetched.push(responseObj);
         });
-
+  
         setResponses(fetched);
       } catch (error) {
         console.error("Error fetching responses:", error);
@@ -45,8 +49,11 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
         setLoading(false);
       }
     };
-
-    fetchResponses();
+  
+    // Only fetch if we have both userId and formId
+    if (userId && formId) {
+      fetchResponses();
+    }
   }, [userId, formId]);
 
   if (loading) return <p>Loading responses...</p>;
