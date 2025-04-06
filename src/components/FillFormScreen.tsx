@@ -6,7 +6,7 @@ import { db } from '../firebaseConfig'; // No need for auth import since it's pu
 interface Question {
   id: string;
   text: string;
-  type: 'text' | 'multipleChoice';
+  type: 'text' | 'multiple-choice';
   required: boolean;
   options?: string[];
 }
@@ -171,7 +171,7 @@ const FillFormScreen: React.FC = () => {
                     className="w-full p-2 border border-gray-300 rounded"
                     required={question.required}
                   />
-                ) : question.type === 'multipleChoice' ? (
+                ) : question.type === 'multiple-choice' ? (
                   <div className="space-y-2">
                     {question.options &&
                       question.options.map((option: string, optIndex: number) => (

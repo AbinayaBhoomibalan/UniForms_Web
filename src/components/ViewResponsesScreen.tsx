@@ -7,9 +7,14 @@ interface ViewResponsesScreenProps {
   formId: string;
 }
 
+interface AnswerEntry {
+  questionId: string;
+  answer: string;
+}
+
 interface ResponseData {
   id: string;
-  answers: { [key: string]: string };
+  answers: AnswerEntry[];
   timestamp: Date;
 }
 
@@ -28,7 +33,7 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
           const data = doc.data();
           fetched.push({
             id: doc.id,
-            answers: data.answers || {},
+            answers: data.responses || [], // 👈 match your Firestore array field
             timestamp: data.timestamp?.toDate() || new Date(),
           });
         });
@@ -60,9 +65,9 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
             {response.timestamp.toLocaleTimeString()}
           </p>
           <ul>
-            {Object.entries(response.answers).map(([question, answer]) => (
-              <li key={question} style={styles.answer}>
-                <strong>{question}:</strong> {answer}
+            {response.answers.map(({ questionId, answer }) => (
+              <li key={questionId} style={styles.answer}>
+                <strong>{questionId}:</strong> {answer}
               </li>
             ))}
           </ul>
