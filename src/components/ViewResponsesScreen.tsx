@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, DocumentData } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 interface ViewResponsesScreenProps {
@@ -18,56 +18,58 @@ interface ResponseData {
   timestamp: Date;
 }
 
+interface QuestionData {
+  [questionId: string]: string; // questionId: questionText
+}
+
 const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formId }) => {
   const [responses, setResponses] = useState<ResponseData[]>([]);
-  const [questionMap, setQuestionMap] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
-
-  // Fetch all questions to map questionId => questionText
-  const fetchQuestions = async () => {
-    const questionsRef = collection(db, "users", userId, "forms", formId, "questions");
-    const snapshot = await getDocs(questionsRef);
-    const map: { [key: string]: string } = {};
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      map[doc.id] = data.question || `Question ${doc.id}`;
-    });
-
-    setQuestionMap(map);
-  };
-
-  // Fetch all responses
-  const fetchResponses = async () => {
-    const responsesRef = collection(db, "users", userId, "forms", formId, "responses");
-    const snapshot = await getDocs(responsesRef);
-    const fetched: ResponseData[] = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      fetched.push({
-        id: doc.id,
-        answers: Array.isArray(data.responses) ? data.responses : [],
-        timestamp: data.submittedAt?.toDate() || new Date(),
-      });
-    });
-
-    setResponses(fetched);
-  };
+  const [questions, setQuestions] = useState<QuestionData>({});
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchResponsesAndQuestions = async () => {
       try {
-        await Promise.all([fetchQuestions(), fetchResponses()]);
+        // Fetch responses
+        const responsesRef = collection(db, "users", userId, "forms", formId, "responses");
+        const snapshot = await getDocs(responsesRef);
+        const fetchedResponses: ResponseData[] = [];
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const responseObj: ResponseData = {
+            id: doc.id,
+            answers: Array.isArray(data.responses) ? data.responses : [],
+            timestamp: data.submittedAt?.toDate() || new Date(),
+          };
+          fetchedResponses.push(responseObj);
+        });
+
+        setResponses(fetchedResponses);
+
+        // Fetch questions from the form document
+        const formDocRef = doc(db, "users", userId, "forms", formId);
+        const formDocSnapshot = await getDoc(formDocRef);
+
+        if (formDocSnapshot.exists()) {
+          const formData = formDocSnapshot.data();
+          if (formData && formData.questions) {
+            const questionMap: QuestionData = {};
+            formData.questions.forEach((question: { id: string; question: string }) => {
+              questionMap[question.id] = question.question;
+            });
+            setQuestions(questionMap);
+          }
+        }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching responses and questions:", error);
       } finally {
         setLoading(false);
       }
     };
 
     if (userId && formId) {
-      fetchAll();
+      fetchResponsesAndQuestions();
     }
   }, [userId, formId]);
 
@@ -83,13 +85,12 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
       {responses.map((response) => (
         <div key={response.id} style={styles.card}>
           <p style={styles.timestamp}>
-            Submitted on: {response.timestamp.toLocaleDateString()}{" "}
-            {response.timestamp.toLocaleTimeString()}
+            Submitted on: {response.timestamp.toLocaleDateString()} {response.timestamp.toLocaleTimeString()}
           </p>
           <ul>
             {response.answers.map(({ questionId, answer }) => (
               <li key={questionId} style={styles.answer}>
-                <strong>{questionMap[questionId] || questionId}:</strong> {answer}
+                <strong>{questions[questionId] || questionId}:</strong> {answer}
               </li>
             ))}
           </ul>
