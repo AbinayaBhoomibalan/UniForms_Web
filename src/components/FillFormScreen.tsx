@@ -32,36 +32,51 @@ const FillFormScreen: React.FC = () => {
 
   useEffect(() => {
     const fetchForm = async () => {
-      try {
-        if (!formId) {
-          setError('Form ID is missing');
-          setLoading(false);
-          return;
-        }
-
-        // Fetching form from 'forms' collection (shared/public access)
-        const formRef = doc(db, 'forms', formId);
-        const formSnap = await getDoc(formRef);
-
-        if (formSnap.exists()) {
+        try {
+          if (!formId) {
+            setError('Form ID is missing');
+            setLoading(false);
+            return;
+          }
+      
+          // Step 1: Lookup userId from formDirectory
+          const directoryRef = doc(db, 'formDirectory', formId);
+          const directorySnap = await getDoc(directoryRef);
+      
+          if (!directorySnap.exists()) {
+            setError('Form not found in directory');
+            setLoading(false);
+            return;
+          }
+      
+          const userId = directorySnap.data().userId;
+      
+          // Step 2: Get form from the correct user path
+          const formRef = doc(db, 'users', userId, 'forms', formId);
+          const formSnap = await getDoc(formRef);
+      
+          if (!formSnap.exists()) {
+            setError('Form not found for user');
+            setLoading(false);
+            return;
+          }
+      
           const formData = formSnap.data() as FormData;
           setForm(formData);
-
+      
           const initialResponses: ResponseData = {};
           formData.questions.forEach((question: Question) => {
             initialResponses[question.id] = '';
           });
           setResponses(initialResponses);
-        } else {
-          setError('Form not found');
+      
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+          setError('Error fetching form: ' + errorMessage);
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-        setError('Error fetching form: ' + errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
     fetchForm();
   }, [formId]);
