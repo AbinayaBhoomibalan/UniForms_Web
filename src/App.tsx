@@ -4,6 +4,7 @@ import LoginPage from './components/LoginPage';
 import FormList from './components/FormList';
 import FormScreen from './components/FormScreen';
 import FillFormScreen from './components/FillFormScreen';
+import ViewResponsesWrapper from './components/ViewResponsesWrapper'; // 👈 import it
 
 const App: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const App: React.FC = () => {
         <Route path="/forms" element={<FormList />} />
         <Route path="/form/:formId" element={<FormScreen />} />
         <Route path="/fill/:formId" element={<FillFormScreen />} />
+        <Route path="/view-responses/:userId/:formId" element={<ViewResponsesWrapper />} /> {/* 👈 new route */}
       </Routes>
     </Router>
   );

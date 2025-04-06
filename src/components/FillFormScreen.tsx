@@ -143,12 +143,6 @@ const FillFormScreen: React.FC = () => {
     <div className="container mx-auto p-4 text-center">
       <h2 className="text-2xl font-bold mb-4">Thank you for your response!</h2>
       <p className="mb-4">Your form has been submitted successfully.</p>
-      <button
-        onClick={() => navigate('/')}
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        Back to Home
-      </button>
     </div>
   );
 
