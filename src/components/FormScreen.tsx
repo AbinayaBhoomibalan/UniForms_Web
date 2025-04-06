@@ -186,8 +186,8 @@ function FormScreen() {
   const generateLink = () => {
     const user = auth.currentUser;
     if (formId && user) {
-      const baseUrl = "";
-      const link = `${baseUrl}/${user.uid}/${formId}`;
+      const baseUrl = "https://uni-forms-app.vercel.app/fill";
+      const link = `${baseUrl}/${formId}`;
       setFormLink(link);
       navigator.clipboard.writeText(link);
       alert("Form link copied to clipboard!");
