@@ -8,7 +8,7 @@ interface Question {
   text: string;
   type: 'text' | 'multiple-choice';
   required: boolean;
-  choice?: string[];
+  choices?: string[];
 }
 
 interface FormData {
@@ -173,8 +173,8 @@ const FillFormScreen: React.FC = () => {
                   />
                 ) : question.type === 'multiple-choice' ? (
                   <div className="space-y-2">
-                    {question.choice &&
-                      question.choice.map((choice: string, optIndex: number) => (
+                    {question.choices &&
+                      question.choices.map((choice: string, optIndex: number) => (
                         <label key={optIndex} className="flex items-center">
                           <input
                             type="radio"

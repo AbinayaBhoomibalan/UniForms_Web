@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, DocumentData } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 interface ViewResponsesScreenProps {
@@ -20,40 +20,54 @@ interface ResponseData {
 
 const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formId }) => {
   const [responses, setResponses] = useState<ResponseData[]>([]);
+  const [questionMap, setQuestionMap] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
 
+  // Fetch all questions to map questionId => questionText
+  const fetchQuestions = async () => {
+    const questionsRef = collection(db, "users", userId, "forms", formId, "questions");
+    const snapshot = await getDocs(questionsRef);
+    const map: { [key: string]: string } = {};
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      map[doc.id] = data.question || `Question ${doc.id}`;
+    });
+
+    setQuestionMap(map);
+  };
+
+  // Fetch all responses
+  const fetchResponses = async () => {
+    const responsesRef = collection(db, "users", userId, "forms", formId, "responses");
+    const snapshot = await getDocs(responsesRef);
+    const fetched: ResponseData[] = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      fetched.push({
+        id: doc.id,
+        answers: Array.isArray(data.responses) ? data.responses : [],
+        timestamp: data.submittedAt?.toDate() || new Date(),
+      });
+    });
+
+    setResponses(fetched);
+  };
+
   useEffect(() => {
-    const fetchResponses = async () => {
+    const fetchAll = async () => {
       try {
-        const responsesRef = collection(db, "users", userId, "forms", formId, "responses");
-        const snapshot = await getDocs(responsesRef);
-        const fetched: ResponseData[] = [];
-  
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          console.log("Fetched response data:", data); // Debugging line
-          // Transform the responses array into the expected format
-          const responseObj: ResponseData = {
-            id: doc.id,
-            // Make sure we're correctly accessing the responses array from Firestore
-            answers: Array.isArray(data.responses) ? data.responses : [],
-            // Use submittedAt instead of timestamp if that's what you're storing
-            timestamp: data.submittedAt?.toDate() || new Date(),
-          };
-          fetched.push(responseObj);
-        });
-  
-        setResponses(fetched);
+        await Promise.all([fetchQuestions(), fetchResponses()]);
       } catch (error) {
-        console.error("Error fetching responses:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
-  
-    // Only fetch if we have both userId and formId
+
     if (userId && formId) {
-      fetchResponses();
+      fetchAll();
     }
   }, [userId, formId]);
 
@@ -75,7 +89,7 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
           <ul>
             {response.answers.map(({ questionId, answer }) => (
               <li key={questionId} style={styles.answer}>
-                <strong>{questionId}:</strong> {answer}
+                <strong>{questionMap[questionId] || questionId}:</strong> {answer}
               </li>
             ))}
           </ul>
