@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
+import { db } from "../firebaseConfig";
 
 interface ViewResponsesScreenProps {
   userId: string;

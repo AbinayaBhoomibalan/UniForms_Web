@@ -199,13 +199,20 @@ function FormScreen() {
 
   const navigateToResponses = () => {
     if (formId) {
-      navigate(`/responses/${formId}`, {
+      const userId = auth.currentUser?.uid; // assuming Firebase Auth is used
+      if (!userId) {
+        alert("User not logged in");
+        return;
+      }
+  
+      navigate(`/view-responses/${userId}/${formId}`, {
         state: { formTitle: title }
       });
     } else {
       alert("Please save the form first before viewing responses.");
     }
   };
+  
 
   const goBack = () => {
     navigate('/forms'); // Adjust path as needed for your application
