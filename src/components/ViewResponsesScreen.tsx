@@ -31,6 +31,7 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
   
         snapshot.forEach(doc => {
           const data = doc.data();
+          console.log("Fetched response data:", data); // Debugging line
           // Transform the responses array into the expected format
           const responseObj: ResponseData = {
             id: doc.id,
