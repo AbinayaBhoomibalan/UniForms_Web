@@ -1,9 +1,8 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig'; // Adjust the import path as needed
 
-// Define types for your form data structure
 interface Question {
   id: string;
   text: string;
@@ -40,14 +39,20 @@ const FillFormScreen: React.FC = () => {
           return;
         }
 
-        const formRef = doc(db, 'forms', formId);
+        const user = auth.currentUser;
+        if (!user) {
+          setError('User not authenticated.');
+          setLoading(false);
+          return;
+        }
+
+        const formRef = doc(db, 'users', user.uid, 'forms', formId);
         const formSnap = await getDoc(formRef);
-        
+
         if (formSnap.exists()) {
           const formData = formSnap.data() as FormData;
           setForm(formData);
-          
-          // Initialize responses object
+
           const initialResponses: ResponseData = {};
           formData.questions.forEach((question: Question) => {
             initialResponses[question.id] = '';
@@ -68,34 +73,39 @@ const FillFormScreen: React.FC = () => {
   }, [formId]);
 
   const handleInputChange = (questionId: string, value: string) => {
-    setResponses(prev => ({
+    setResponses((prev) => ({
       ...prev,
-      [questionId]: value
+      [questionId]: value,
     }));
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       if (!formId) {
         setError('Form ID is missing');
         return;
       }
 
-      // Add response to Firestore
+      const user = auth.currentUser;
+      if (!user) {
+        setError("User not authenticated");
+        return;
+      }
+
       const responseData = {
         formId,
         responses: Object.entries(responses).map(([questionId, answer]) => ({
           questionId,
-          answer
+          answer,
         })),
-        submittedAt: serverTimestamp()
+        submittedAt: serverTimestamp(),
       };
-      
-      const responsesCollectionRef = collection(db, 'forms', formId, 'responses');
+
+      const responsesCollectionRef = collection(db, 'users', user.uid, 'forms', formId, 'responses');
       await addDoc(responsesCollectionRef, responseData);
-      
+
       setSubmitted(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -109,7 +119,7 @@ const FillFormScreen: React.FC = () => {
     <div className="container mx-auto p-4 text-center">
       <h2 className="text-2xl font-bold mb-4">Thank you for your response!</h2>
       <p className="mb-4">Your form has been submitted successfully.</p>
-      <button 
+      <button
         onClick={() => navigate('/')}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
       >
@@ -125,46 +135,48 @@ const FillFormScreen: React.FC = () => {
       <div className="bg-white shadow-md rounded-lg p-6 mb-8">
         <h1 className="text-3xl font-bold mb-2">{form.title}</h1>
         <p className="text-gray-600 mb-6">{form.description}</p>
-        
+
         <form onSubmit={handleSubmit}>
-          {form.questions && form.questions.map((question: Question, index: number) => (
-            <div key={question.id} className="mb-6 p-4 border border-gray-200 rounded-lg">
-              <p className="text-lg font-medium mb-2">
-                {index + 1}. {question.text}
-                {question.required && <span className="text-red-500 ml-1">*</span>}
-              </p>
-              
-              {question.type === 'text' ? (
-                <input
-                  type="text"
-                  value={responses[question.id] || ''}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => handleInputChange(question.id, e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required={question.required}
-                />
-              ) : question.type === 'multipleChoice' ? (
-                <div className="space-y-2">
-                  {question.options && question.options.map((option: string, optIndex: number) => (
-                    <label key={optIndex} className="flex items-center">
-                      <input
-                        type="radio"
-                        name={`question-${question.id}`}
-                        value={option}
-                        checked={responses[question.id] === option}
-                        onChange={() => handleInputChange(question.id, option)}
-                        className="mr-2"
-                        required={question.required && optIndex === 0}
-                      />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ))}
-          
+          {form.questions &&
+            form.questions.map((question: Question, index: number) => (
+              <div key={question.id} className="mb-6 p-4 border border-gray-200 rounded-lg">
+                <p className="text-lg font-medium mb-2">
+                  {index + 1}. {question.text}
+                  {question.required && <span className="text-red-500 ml-1">*</span>}
+                </p>
+
+                {question.type === 'text' ? (
+                  <input
+                    type="text"
+                    value={responses[question.id] || ''}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleInputChange(question.id, e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded"
+                    required={question.required}
+                  />
+                ) : question.type === 'multipleChoice' ? (
+                  <div className="space-y-2">
+                    {question.options &&
+                      question.options.map((option: string, optIndex: number) => (
+                        <label key={optIndex} className="flex items-center">
+                          <input
+                            type="radio"
+                            name={`question-${question.id}`}
+                            value={option}
+                            checked={responses[question.id] === option}
+                            onChange={() => handleInputChange(question.id, option)}
+                            className="mr-2"
+                            required={question.required && optIndex === 0}
+                          />
+                          {option}
+                        </label>
+                      ))}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+
           <div className="flex justify-end mt-6">
-            <button 
+            <button
               type="submit"
               className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
             >
