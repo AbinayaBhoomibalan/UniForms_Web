@@ -7,5 +7,10 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    rollupOptions: {
+      external: [] // Explicitly define modules that should be external
+    }
+  },
   base: process.env.VITE_BASE_PATH || "/UniForms_Web",
 });
