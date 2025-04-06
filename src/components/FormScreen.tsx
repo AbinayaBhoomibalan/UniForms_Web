@@ -186,6 +186,7 @@ function FormScreen() {
   const generateLink = () => {
     const user = auth.currentUser;
     if (formId && user) {
+      console.log(formId)
       const baseUrl = "https://uni-forms-app.vercel.app/fill";
       const link = `${baseUrl}/${formId}`;
       setFormLink(link);
