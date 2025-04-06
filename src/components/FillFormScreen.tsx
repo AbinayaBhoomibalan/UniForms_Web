@@ -90,13 +90,24 @@ const FillFormScreen: React.FC = () => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+  
     try {
       if (!formId) {
         setError('Form ID is missing');
         return;
       }
-
+  
+      // Step 1: Lookup userId from formDirectory again
+      const directoryRef = doc(db, 'formDirectory', formId);
+      const directorySnap = await getDoc(directoryRef);
+  
+      if (!directorySnap.exists()) {
+        setError('Form directory entry not found');
+        return;
+      }
+  
+      const userId = directorySnap.data().userId;
+  
       const responseData = {
         formId,
         responses: Object.entries(responses).map(([questionId, answer]) => ({
@@ -105,17 +116,26 @@ const FillFormScreen: React.FC = () => {
         })),
         submittedAt: serverTimestamp(),
       };
-
-      // Storing in public responses collection
-      const responsesCollectionRef = collection(db, 'forms', formId, 'responses');
+  
+      // ✅ Now use the correct functional path
+      const responsesCollectionRef = collection(
+        db,
+        'users',
+        userId,
+        'forms',
+        formId,
+        'responses'
+      );
+  
       await addDoc(responsesCollectionRef, responseData);
-
       setSubmitted(true);
+  
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError('Error submitting form: ' + errorMessage);
     }
   };
+  
 
   if (loading) return <div className="container mx-auto p-4">Loading form...</div>;
   if (error) return <div className="container mx-auto p-4 text-red-500">{error}</div>;
