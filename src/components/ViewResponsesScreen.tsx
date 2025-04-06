@@ -9,6 +9,7 @@ interface ViewResponsesScreenProps {
 
 interface AnswerEntry {
   questionId: string;
+  questionText: string;
   answer: string;
 }
 
@@ -88,9 +89,9 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
             Submitted on: {response.timestamp.toLocaleDateString()} {response.timestamp.toLocaleTimeString()}
           </p>
           <ul>
-            {response.answers.map(({ questionId, answer }) => (
+            {response.answers.map(({ questionId, questionText, answer }) => (
               <li key={questionId} style={styles.answer}>
-                <strong>{questions[questionId] || questionId}:</strong> {answer}
+                <strong>{questionText}:</strong> {answer}
               </li>
             ))}
           </ul>

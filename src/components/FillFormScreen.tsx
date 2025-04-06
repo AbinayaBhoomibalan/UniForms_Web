@@ -98,7 +98,7 @@ const FillFormScreen: React.FC = () => {
         return;
       }
   
-      // Step 1: Lookup userId from formDirectory again
+      // Lookup userId from formDirectory
       const directoryRef = doc(db, 'formDirectory', formId);
       const directorySnap = await getDoc(directoryRef);
   
@@ -109,16 +109,19 @@ const FillFormScreen: React.FC = () => {
   
       const userId = directorySnap.data().userId;
   
+      // 🆕 Include both questionId, questionText and answer
+      const enrichedResponses = form?.questions.map((question) => ({
+        questionId: question.id,
+        questionText: question.text,
+        answer: responses[question.id] || '',
+      })) || [];
+  
       const responseData = {
         formId,
-        responses: Object.entries(responses).map(([questionId, answer]) => ({
-          questionId,
-          answer,
-        })),
+        responses: enrichedResponses,
         submittedAt: serverTimestamp(),
       };
   
-      // Use the correct path
       const responsesCollectionRef = collection(
         db,
         'users',
@@ -136,6 +139,7 @@ const FillFormScreen: React.FC = () => {
       setError('Error submitting form: ' + errorMessage);
     }
   };
+  
 
   const goBack = () => {
     navigate(-1); // Go back to previous page
