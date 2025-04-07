@@ -183,12 +183,6 @@ const FillFormScreen: React.FC = () => {
         </div>
         <h2 className="text-2xl font-bold mb-4">Thank you for your response!</h2>
         <p className="mb-6 text-gray-600">Your form has been submitted successfully.</p>
-        <button 
-          onClick={goBack}
-          className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
-        >
-          Back to Home
-        </button>
       </div>
     </div>
   );
