@@ -18,18 +18,24 @@ function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+  
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
-
+  
+    // Email suffix check
+    if (!email.endsWith('@psgtech.ac.in')) {
+      setError('Email must end with @psgtech.ac.in');
+      return;
+    }
+  
     if (isSignUp) {
       if (password !== confirmPassword) {
         setError('Passwords do not match');
         return;
       }
-
+  
       try {
         await createUserWithEmailAndPassword(auth, email, password);
         navigate('/forms');
@@ -45,6 +51,7 @@ function LoginPage() {
       }
     }
   };
+  
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center pt-20 px-4">
