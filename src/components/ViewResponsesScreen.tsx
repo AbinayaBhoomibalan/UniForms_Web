@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
 interface ViewResponsesScreenProps {
   userId: string;
@@ -27,6 +28,7 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
   const [responses, setResponses] = useState<ResponseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuestionData>({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchResponsesAndQuestions = async () => {
@@ -97,6 +99,22 @@ const ViewResponsesScreen: React.FC<ViewResponsesScreenProps> = ({ userId, formI
           </ul>
         </div>
       ))}
+
+      {/* Go Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          marginTop: "20px",
+          padding: "10px 20px",
+          backgroundColor: "#333",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer"
+        }}
+      >
+        Go Back
+      </button>
     </div>
   );
 };
