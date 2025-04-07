@@ -31,6 +31,10 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
   if (isSignUp) {
+    if (!email.endsWith('@psgtech.ac.in')) {
+      setError('Email must end with @psgtech.ac.in');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -38,14 +42,14 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      navigate('/forms');
+      navigate('/forms', { replace: true });
     } catch (err: any) {
       setError(err.message);
     }
   } else {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/forms');
+      navigate('/forms', { replace: true });
     } catch (err: any) {
       setError(err.message);
     }
