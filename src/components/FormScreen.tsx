@@ -121,7 +121,7 @@ function FormScreen() {
   const addTextQuestion = () => {
     if (!currentQuestion.trim()) return alert('Please enter a question');
     if (!formId) return;
-
+  
     try {
       const newQuestion: Question = { 
         id: Math.random().toString(36).substr(2, 8), 
@@ -132,16 +132,18 @@ function FormScreen() {
       setQuestions(updatedQuestions);
       saveForm("questions", updatedQuestions);
       setCurrentQuestion('');
+      setShowQuestionInput(false);
+      setQuestionType(null);
     } catch (error) {
       console.error("Error adding question:", error);
     }
   };
-
+  
   const addMultipleChoiceQuestion = () => {
     if (!currentQuestion.trim()) return alert('Please enter a question');
     if (choices.some(choice => !choice.trim())) return alert('Please fill in all choices');
     if (!formId) return;
-
+  
     try {
       const newQuestion: Question = {
         id: Math.random().toString(36).substr(2, 8),
@@ -154,27 +156,48 @@ function FormScreen() {
       saveForm("questions", updatedQuestions);
       setCurrentQuestion('');
       setChoices(['']);
+      setShowQuestionInput(false);
+      setQuestionType(null);
     } catch (error) {
       console.error("Error adding question:", error);
     }
   };
-
+  
   const addChoice = () => {
     if (choices.length >= 5) return alert('Maximum 5 choices allowed');
     setChoices([...choices, '']);
   };
-
+  
   const updateChoice = (index: number, value: string) => {
     const newChoices = [...choices];
     newChoices[index] = value;
     setChoices(newChoices);
   };
-
+  
   const removeChoice = (index: number) => {
     if (choices.length > 1) {
       setChoices(choices.filter((_, i) => i !== index));
     }
   };
+  
+  // Add new state variables
+  const [showQuestionInput, setShowQuestionInput] = useState(false);
+  const [questionType, setQuestionType] = useState<'text' | 'multiple-choice' | null>(null);
+  
+  // Functions to handle displaying the appropriate input fields
+  const handleAddTextQuestion = () => {
+    setShowQuestionInput(true);
+    setQuestionType('text');
+    setCurrentQuestion('');
+  };
+  
+  const handleAddMultipleChoiceQuestion = () => {
+    setShowQuestionInput(true);
+    setQuestionType('multiple-choice');
+    setCurrentQuestion('');
+    setChoices(['']);
+  };
+  
 
   const removeQuestion = async (id: string) => {
     if (!formId) return;
@@ -240,14 +263,8 @@ function FormScreen() {
             </button>
             <h1 className="text-2xl font-bold text-gray-800">Form Editor</h1>
           </div>
-          <button 
-            onClick={signOut}
-            className="text-gray-700 hover:text-red-600 hover:bg-gray-200 p-2 rounded-full transition-colors"
-          >
-            <LogOut className="w-6 h-6" />
-          </button>
         </div>
-
+  
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <input
             className="w-full text-2xl font-bold mb-4 p-2 border-b border-gray-300 focus:outline-none focus:border-gray-500"
@@ -271,7 +288,7 @@ function FormScreen() {
             />
           </div>
         </div>
-
+  
         {questions.map((q, index) => (
           <div key={q.id} className="bg-white rounded-lg shadow-md p-6 mb-4">
             <div className="flex justify-between items-start mb-4">
@@ -297,7 +314,7 @@ function FormScreen() {
               placeholder="Enter your question"
               className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:border-gray-500"
             />
-
+  
             {q.type === 'multiple-choice' && (
               <>
                 <p className="font-medium text-gray-700 mb-2">Choices:</p>
@@ -363,61 +380,95 @@ function FormScreen() {
             )}
           </div>
         ))}
-
+  
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h3 className="font-medium text-gray-800 mb-4">Add New Question</h3>
-          <input
-            type="text"
-            value={currentQuestion}
-            onChange={(e) => setCurrentQuestion(e.target.value)}
-            placeholder="Enter your question"
-            className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:border-gray-500"
-          />
-
-          {currentQuestion && (
-            <div className="space-y-2 mb-4">
-              {choices.map((choice, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={choice}
-                    onChange={(e) => updateChoice(index, e.target.value)}
-                    placeholder={`Choice ${index + 1}`}
-                    className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
-                  />
+          
+          {showQuestionInput ? (
+            <>
+              <input
+                type="text"
+                value={currentQuestion}
+                onChange={(e) => setCurrentQuestion(e.target.value)}
+                placeholder="Enter your question"
+                className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:border-gray-500"
+              />
+  
+              {questionType === 'multiple-choice' && (
+                <div className="space-y-2 mb-4">
+                  {choices.map((choice, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={choice}
+                        onChange={(e) => updateChoice(index, e.target.value)}
+                        placeholder={`Choice ${index + 1}`}
+                        className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
+                      />
+                      <button
+                        onClick={() => removeChoice(index)}
+                        className="text-red-500 hover:text-red-600 hover:bg-gray-100 p-2 rounded transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                   <button
-                    onClick={() => removeChoice(index)}
-                    className="text-red-500 hover:text-red-600 hover:bg-gray-100 p-2 rounded transition-colors"
+                    onClick={addChoice}
+                    className="text-gray-600 hover:text-gray-800 flex items-center gap-1 p-2 hover:bg-gray-100 rounded transition-colors text-sm"
                   >
-                    ×
+                    <Plus className="w-4 h-4" /> Add Choice
                   </button>
                 </div>
-              ))}
+              )}
+  
+              <div className="flex gap-2 mt-4">
+                {questionType === 'text' ? (
+                  <button
+                    onClick={addTextQuestion}
+                    className="flex-1 p-3 rounded bg-gray-500 hover:bg-gray-600 transition-colors text-white"
+                  >
+                    Add Text Question
+                  </button>
+                ) : (
+                  <button
+                    onClick={addMultipleChoiceQuestion}
+                    className="flex-1 p-3 rounded bg-gray-500 hover:bg-gray-600 transition-colors text-white"
+                  >
+                    Add Multiple Choice
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowQuestionInput(false);
+                    setQuestionType(null);
+                    setCurrentQuestion('');
+                    setChoices(['']);
+                  }}
+                  className="flex-1 p-3 rounded bg-red-500 hover:bg-red-600 transition-colors text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-2 mt-4">
               <button
-                onClick={addChoice}
-                className="text-gray-600 hover:text-gray-800 flex items-center gap-1 p-2 hover:bg-gray-100 rounded transition-colors text-sm"
+                onClick={handleAddTextQuestion}
+                className="flex-1 p-3 rounded bg-gray-500 hover:bg-gray-600 transition-colors text-white"
               >
-                <Plus className="w-4 h-4" /> Add Choice
+                Add Text Question
+              </button>
+              <button
+                onClick={handleAddMultipleChoiceQuestion}
+                className="flex-1 p-3 rounded bg-gray-500 hover:bg-gray-600 transition-colors text-white"
+              >
+                Add Multiple Choice
               </button>
             </div>
           )}
-
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={addTextQuestion}
-              className="flex-1 p-3 rounded bg-gray-500 hover:bg-gray-600 transition-colors text-white"
-            >
-              Add Text Question
-            </button>
-            <button
-              onClick={addMultipleChoiceQuestion}
-              className="flex-1 p-3 rounded bg-gray-500 hover:bg-gray-600 transition-colors text-white"
-            >
-              Add Multiple Choice
-            </button>
-          </div>
         </div>
-
+  
         {formLink && (
           <div className="bg-white rounded-lg shadow p-4 mb-4">
             <p className="text-sm break-all text-gray-700">
@@ -425,7 +476,7 @@ function FormScreen() {
             </p>
           </div>
         )}
-
+  
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={generateLink}
